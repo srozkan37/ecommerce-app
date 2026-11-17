@@ -29,15 +29,25 @@ class ApiClient {
 
   async getProducts(
     params: {
+      q?: string
+      minPrice?: number
+      maxPrice?: number
       categoryId?: string
       deliveryOptionId?: string
       sort?: string
+      skip?: number
+      limit?: number
     } = {}
   ): Promise<Product[]> {
     const searchParams = new globalThis.URLSearchParams()
+    if (params.q) searchParams.set('q', params.q)
+    if (params.minPrice !== undefined && !isNaN(params.minPrice)) searchParams.set('min_price', params.minPrice.toString())
+    if (params.maxPrice !== undefined && !isNaN(params.maxPrice)) searchParams.set('max_price', params.maxPrice.toString())
     if (params.categoryId) searchParams.set('categoryId', params.categoryId)
     if (params.deliveryOptionId) searchParams.set('deliveryOptionId', params.deliveryOptionId)
     if (params.sort) searchParams.set('sort', params.sort)
+    if (params.skip !== undefined) searchParams.set('skip', params.skip.toString())
+    if (params.limit !== undefined) searchParams.set('limit', params.limit.toString())
 
     return this.request<Product[]>(`/api/products?${searchParams.toString()}`)
   }

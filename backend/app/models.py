@@ -31,9 +31,9 @@ class Product(SQLModel, table=True):
     __tablename__ = "products"
 
     id: Optional[int] = Field(default=None, primary_key=True)  # Keep existing JSON IDs
-    title: str
+    title: str = Field(index=True)
     description: str
-    price: float
+    price: float = Field(index=True)
 
     # BLOB storage for images with explicit LargeBinary column
     image_data: Optional[bytes] = Field(

@@ -10,15 +10,23 @@ export interface UseFilteredProductsResult {
   refetch: () => void
 }
 
-export const useFilteredProducts = (): UseFilteredProductsResult => {
+export const useFilteredProducts = () => {
   const [rawProducts, setRawProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
 
+  const q = searchParams.get('q') || ''
+  const minPriceParam = searchParams.get('min_price')
+  const maxPriceParam = searchParams.get('max_price')
   const cat = searchParams.get('cat') || ''
   const deliv = searchParams.get('deliv') || ''
   const sort = searchParams.get('sort') || 'created_desc'
+  const skip = parseInt(searchParams.get('skip') || '0', 10)
+  const limit = parseInt(searchParams.get('limit') || '50', 10)
+
+  const minPrice = minPriceParam !== null && minPriceParam !== '' ? parseFloat(minPriceParam) : undefined
+  const maxPrice = maxPriceParam !== null && maxPriceParam !== '' ? parseFloat(maxPriceParam) : undefined
 
   const fetchProducts = async () => {
     try {
@@ -26,14 +34,24 @@ export const useFilteredProducts = (): UseFilteredProductsResult => {
       setError(null)
 
       const params: {
+        q?: string
+        minPrice?: number
+        maxPrice?: number
         categoryId?: string
         deliveryOptionId?: string
         sort?: string
+        skip?: number
+        limit?: number
       } = {}
 
+      if (q) params.q = q
+      if (minPrice !== undefined) params.minPrice = minPrice
+      if (maxPrice !== undefined) params.maxPrice = maxPrice
       if (cat) params.categoryId = cat
       if (deliv) params.deliveryOptionId = deliv
       if (sort) params.sort = sort
+      if (!isNaN(skip)) params.skip = skip
+      if (!isNaN(limit)) params.limit = limit
 
       const productsData = await api.getProducts(params)
       setRawProducts(productsData)
@@ -47,21 +65,11 @@ export const useFilteredProducts = (): UseFilteredProductsResult => {
 
   useEffect(() => {
     fetchProducts()
-  }, [cat, deliv, sort])
+  }, [q, minPrice, maxPrice, cat, deliv, sort, skip, limit])
 
   const products = useMemo(() => {
-    if (sort !== 'price_asc' && sort !== 'price_desc') return rawProducts
-
-    const clone = [...rawProducts]
-
-    if (sort === 'price_asc') {
-      clone.sort((a: any, b: any) => a.price - b.price)
-    } else if (sort === 'price_desc') {
-      clone.sort((a: any, b: any) => b.price - a.price)
-    }
-
-    return clone
-  }, [rawProducts, sort])
+    return rawProducts
+  }, [rawProducts])
 
   return { products, loading, error, refetch: fetchProducts }
 }
