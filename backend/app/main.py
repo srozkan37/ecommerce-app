@@ -21,9 +21,19 @@ from .schemas import (
     CategoryCreate,
     CategoryReadWithProducts,
     DeliveryOptionRead,
+    UserCreate,
+    UserLogin,
+    UserRead,
+    TokenResponse,
 )
 from . import crud
-from .models import Product, DeliveryOption, Category, ProductDeliveryLink
+from .models import Product, DeliveryOption, Category, ProductDeliveryLink, User
+from .auth import (
+    get_password_hash,
+    verify_password,
+    create_access_token,
+    get_current_user,
+)
 
 
 def calculate_delivery_summary(
@@ -505,6 +515,67 @@ def get_product_image(product_id: int, session: Session = Depends(get_session)):
             "Cache-Control": "public, max-age=86400",
         },
     )
+
+
+# Authentication Endpoints
+@app.post("/auth/register", response_model=TokenResponse, status_code=201)
+def register(user_in: UserCreate, session: Session = Depends(get_session)):
+    existing = session.query(User).filter(User.email == user_in.email).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+    
+    hashed_password = get_password_hash(user_in.password)
+    db_user = User(
+        email=user_in.email,
+        hashed_password=hashed_password,
+        full_name=user_in.full_name,
+        is_active=True,
+    )
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+
+    access_token = create_access_token(data={"sub": db_user.email})
+    
+    user_read = UserRead.model_validate(db_user)
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=user_read,
+    )
+
+
+@app.post("/auth/login", response_model=TokenResponse)
+def login(user_in: UserLogin, session: Session = Depends(get_session)):
+    user = session.query(User).filter(User.email == user_in.email).first()
+    if not user or not verify_password(user_in.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Inactive user account",
+        )
+
+    access_token = create_access_token(data={"sub": user.email})
+    user_read = UserRead.model_validate(user)
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=user_read,
+    )
+
+
+@app.get("/auth/me", response_model=UserRead)
+def get_me(current_user: User = Depends(get_current_user)):
+    return UserRead.model_validate(current_user)
+
 
 
 if __name__ == "__main__":
