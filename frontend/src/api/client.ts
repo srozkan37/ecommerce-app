@@ -41,8 +41,10 @@ class ApiClient {
   ): Promise<Product[]> {
     const searchParams = new globalThis.URLSearchParams()
     if (params.q) searchParams.set('q', params.q)
-    if (params.minPrice !== undefined && !isNaN(params.minPrice)) searchParams.set('min_price', params.minPrice.toString())
-    if (params.maxPrice !== undefined && !isNaN(params.maxPrice)) searchParams.set('max_price', params.maxPrice.toString())
+    if (params.minPrice !== undefined && !isNaN(params.minPrice))
+      searchParams.set('min_price', params.minPrice.toString())
+    if (params.maxPrice !== undefined && !isNaN(params.maxPrice))
+      searchParams.set('max_price', params.maxPrice.toString())
     if (params.categoryId) searchParams.set('categoryId', params.categoryId)
     if (params.deliveryOptionId) searchParams.set('deliveryOptionId', params.deliveryOptionId)
     if (params.sort) searchParams.set('sort', params.sort)

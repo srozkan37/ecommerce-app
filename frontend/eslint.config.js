@@ -28,6 +28,8 @@ export default [
         HTMLInputElement: 'readonly',
         HTMLSelectElement: 'readonly',
         SVGSVGElement: 'readonly',
+        URLSearchParams: 'readonly',
+        React: 'readonly',
       },
     },
     plugins: {

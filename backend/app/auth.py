@@ -1,16 +1,13 @@
-from passlib.context import CryptContext
+import bcrypt
 from datetime import datetime, timedelta, UTC
 from typing import Optional
 import os
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlmodel import Session
+from sqlmodel import Session, select
 from .db import get_session
 from .models import User
-
-# Password hashing context using bcrypt
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # JWT configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkeychangeinproduction1234567890")
@@ -21,11 +18,18 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8")[:72], hashed_password.encode("utf-8")
+        )
+    except Exception:
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    pwd_bytes = password.encode("utf-8")[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -49,13 +53,14 @@ def get_current_user(
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        sub = payload.get("sub")
+        if not sub or not isinstance(sub, str):
             raise credentials_exception
+        email: str = sub
     except jwt.PyJWTError:
         raise credentials_exception
 
-    user = session.query(User).filter(User.email == email).first()
+    user = session.exec(select(User).where(User.email == email)).first()
     if user is None:
         raise credentials_exception
     if not user.is_active:

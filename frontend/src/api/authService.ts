@@ -24,7 +24,10 @@ class AuthApiClient {
       try {
         const errorData = await response.json()
         if (errorData.detail) {
-          errorMsg = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail)
+          errorMsg =
+            typeof errorData.detail === 'string'
+              ? errorData.detail
+              : JSON.stringify(errorData.detail)
         }
       } catch {
         // ignore JSON parse error

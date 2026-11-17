@@ -279,14 +279,38 @@ def test_product_timestamps(client: TestClient, session: Session):
     original_created_at = product["created_at"]
     original_updated_at = product["updated_at"]
 
+    # Wait a moment and update
+    time.sleep(0.1)
+
+    update_response = client.put(
+        f"/products/{product_id}", json={"title": "Updated Title"}
+    )
+    assert update_response.status_code == 200
+
+    updated_product = update_response.json()
+    assert updated_product["created_at"] == original_created_at  # Should not change
+    assert updated_product["updated_at"] != original_updated_at  # Should change
+
 
 # Advanced Search, Filtering, Sorting, and Pagination Tests for KAN-12
 def test_api_products_search_query(client: TestClient, session: Session):
     """Test GET /api/products with search query q (substring match on title or description)"""
     category = create_test_category(session)
-    create_test_product(session, category.id, title="Wireless Ergonomic Mouse", description="High precision optical mouse")
-    create_test_product(session, category.id, title="Mechanical Keyboard", description="RGB Backlit keyboard with wireless connectivity")
-    create_test_product(session, category.id, title="USB-C Hub", description="Multiport adapter")
+    create_test_product(
+        session,
+        category.id,
+        title="Wireless Ergonomic Mouse",
+        description="High precision optical mouse",
+    )
+    create_test_product(
+        session,
+        category.id,
+        title="Mechanical Keyboard",
+        description="RGB Backlit keyboard with wireless connectivity",
+    )
+    create_test_product(
+        session, category.id, title="USB-C Hub", description="Multiport adapter"
+    )
     session.commit()
 
     # Search by title keyword
@@ -306,7 +330,9 @@ def test_api_products_search_query(client: TestClient, session: Session):
     assert data[0]["title"] == "Wireless Ergonomic Mouse"
 
 
-def test_api_products_price_filtering_and_validation(client: TestClient, session: Session):
+def test_api_products_price_filtering_and_validation(
+    client: TestClient, session: Session
+):
     """Test GET /api/products with min_price, max_price, and validation error when min_price > max_price"""
     category = create_test_category(session)
     create_test_product(session, category.id, title="Budget Item", price=10.0)
@@ -315,7 +341,9 @@ def test_api_products_price_filtering_and_validation(client: TestClient, session
     session.commit()
 
     # Filter within price range
-    response = client.get("/api/products?min_price=20&max_price=100")
+    response = client.get(
+        f"/api/products?categoryId={category.id}&min_price=20&max_price=100"
+    )
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
@@ -339,21 +367,33 @@ def test_api_products_sorting(client: TestClient, session: Session):
     response = client.get("/api/products?sort=price_asc")
     assert response.status_code == 200
     data = response.json()
-    prices = [p["price"] for p in data if p["title"] in ["Alpha Product", "Beta Product", "Gamma Product"]]
+    prices = [
+        p["price"]
+        for p in data
+        if p["title"] in ["Alpha Product", "Beta Product", "Gamma Product"]
+    ]
     assert prices == sorted(prices)
 
     # Sort by price_desc
     response = client.get("/api/products?sort=price_desc")
     assert response.status_code == 200
     data = response.json()
-    prices = [p["price"] for p in data if p["title"] in ["Alpha Product", "Beta Product", "Gamma Product"]]
+    prices = [
+        p["price"]
+        for p in data
+        if p["title"] in ["Alpha Product", "Beta Product", "Gamma Product"]
+    ]
     assert prices == sorted(prices, reverse=True)
 
     # Sort by title_asc
     response = client.get("/api/products?sort=title_asc")
     assert response.status_code == 200
     data = response.json()
-    titles = [p["title"] for p in data if p["title"] in ["Alpha Product", "Beta Product", "Gamma Product"]]
+    titles = [
+        p["title"]
+        for p in data
+        if p["title"] in ["Alpha Product", "Beta Product", "Gamma Product"]
+    ]
     assert titles == sorted(titles)
 
 
@@ -361,7 +401,9 @@ def test_api_products_pagination(client: TestClient, session: Session):
     """Test GET /api/products pagination with skip and limit"""
     category = create_test_category(session)
     for i in range(5):
-        create_test_product(session, category.id, title=f"Pagination Product {i:02d}", price=10.0 + i)
+        create_test_product(
+            session, category.id, title=f"Pagination Product {i:02d}", price=10.0 + i
+        )
     session.commit()
 
     # Limit 2, skip 0
@@ -376,19 +418,6 @@ def test_api_products_pagination(client: TestClient, session: Session):
     page2 = response.json()
     assert len(page2) == 2
     assert page1[0]["id"] != page2[0]["id"]
-
-
-    # Wait a moment and update
-    time.sleep(0.1)
-
-    update_response = client.put(
-        f"/products/{product_id}", json={"title": "Updated Title"}
-    )
-    assert update_response.status_code == 200
-
-    updated_product = update_response.json()
-    assert updated_product["created_at"] == original_created_at  # Should not change
-    assert updated_product["updated_at"] != original_updated_at  # Should change
 
 
 def test_product_category_relationship(client: TestClient, session: Session):

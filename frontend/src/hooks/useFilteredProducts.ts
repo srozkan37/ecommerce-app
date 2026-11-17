@@ -25,8 +25,10 @@ export const useFilteredProducts = () => {
   const skip = parseInt(searchParams.get('skip') || '0', 10)
   const limit = parseInt(searchParams.get('limit') || '50', 10)
 
-  const minPrice = minPriceParam !== null && minPriceParam !== '' ? parseFloat(minPriceParam) : undefined
-  const maxPrice = maxPriceParam !== null && maxPriceParam !== '' ? parseFloat(maxPriceParam) : undefined
+  const minPrice =
+    minPriceParam !== null && minPriceParam !== '' ? parseFloat(minPriceParam) : undefined
+  const maxPrice =
+    maxPriceParam !== null && maxPriceParam !== '' ? parseFloat(maxPriceParam) : undefined
 
   const fetchProducts = async () => {
     try {

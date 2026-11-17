@@ -29,6 +29,7 @@ def create_test_product(
     title: Optional[str] = None,
     price: Optional[float] = None,
     with_image: bool = False,
+    description: Optional[str] = None,
 ) -> Product:
     """Create a test product with configurable options"""
     if category_id is None:
@@ -48,7 +49,9 @@ def create_test_product(
     # Create Product directly with all required fields
     product = Product(
         title=title,
-        description=f"Description for {title}",
+        description=description
+        if description is not None
+        else f"Description for {title}",
         price=price,
         category_id=category_id,
         is_saved=False,

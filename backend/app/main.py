@@ -1,8 +1,8 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from sqlmodel import Session, select, or_
+from sqlmodel import Session, select, or_, col
 from sqlalchemy.orm import selectinload
 from typing import List, Optional, cast, Any
 from sqlalchemy.sql.elements import ColumnElement
@@ -201,7 +201,9 @@ def create_product(product: ProductCreate, session: Session = Depends(get_sessio
 # Enhanced API endpoint for filtering, searching, and sorting
 @app.get("/api/products", response_model=List[ProductRead])
 def get_products_api(
-    q: Optional[str] = Query(None, description="Search query for product title or description"),
+    q: Optional[str] = Query(
+        None, description="Search query for product title or description"
+    ),
     min_price: Optional[float] = Query(None, ge=0, description="Minimum product price"),
     max_price: Optional[float] = Query(None, ge=0, description="Maximum product price"),
     categoryId: Optional[int] = Query(None),
@@ -216,8 +218,7 @@ def get_products_api(
     # Validation guard: min_price <= max_price
     if min_price is not None and max_price is not None and min_price > max_price:
         raise HTTPException(
-            status_code=400,
-            detail="min_price cannot be greater than max_price"
+            status_code=400, detail="min_price cannot be greater than max_price"
         )
 
     stmt = select(Product).join(Category)
@@ -227,8 +228,8 @@ def get_products_api(
         search_pattern = f"%{q.strip()}%"
         stmt = stmt.where(
             or_(
-                Product.title.ilike(search_pattern),
-                Product.description.ilike(search_pattern)
+                col(Product.title).ilike(search_pattern),
+                col(Product.description).ilike(search_pattern),
             )
         )
 
@@ -520,13 +521,13 @@ def get_product_image(product_id: int, session: Session = Depends(get_session)):
 # Authentication Endpoints
 @app.post("/auth/register", response_model=TokenResponse, status_code=201)
 def register(user_in: UserCreate, session: Session = Depends(get_session)):
-    existing = session.query(User).filter(User.email == user_in.email).first()
+    existing = session.exec(select(User).where(User.email == user_in.email)).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-    
+
     hashed_password = get_password_hash(user_in.password)
     db_user = User(
         email=user_in.email,
@@ -539,7 +540,7 @@ def register(user_in: UserCreate, session: Session = Depends(get_session)):
     session.refresh(db_user)
 
     access_token = create_access_token(data={"sub": db_user.email})
-    
+
     user_read = UserRead.model_validate(db_user)
     return TokenResponse(
         access_token=access_token,
@@ -550,7 +551,7 @@ def register(user_in: UserCreate, session: Session = Depends(get_session)):
 
 @app.post("/auth/login", response_model=TokenResponse)
 def login(user_in: UserLogin, session: Session = Depends(get_session)):
-    user = session.query(User).filter(User.email == user_in.email).first()
+    user = session.exec(select(User).where(User.email == user_in.email)).first()
     if not user or not verify_password(user_in.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -575,7 +576,6 @@ def login(user_in: UserLogin, session: Session = Depends(get_session)):
 @app.get("/auth/me", response_model=UserRead)
 def get_me(current_user: User = Depends(get_current_user)):
     return UserRead.model_validate(current_user)
-
 
 
 if __name__ == "__main__":

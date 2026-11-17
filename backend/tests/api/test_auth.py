@@ -4,8 +4,6 @@ from sqlmodel import Session, create_engine, SQLModel
 from sqlmodel.pool import StaticPool
 from app.main import app
 from app.db import get_session
-from app.models import User
-from app.auth import get_password_hash
 
 
 @pytest.fixture(name="session")
