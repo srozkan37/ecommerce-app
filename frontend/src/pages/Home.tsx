@@ -1,9 +1,12 @@
-import { HStack, Tag, Text } from '@chakra-ui/react'
+import { HStack, Tag, Text, Flex } from '@chakra-ui/react'
 import FeaturedBanner from '../components/FeaturedBanner'
 import LoadingProduct from '../components/Loading/LoadingProduct'
 import Main from '../components/Main'
 import ProductCard from '../components/ProductCard'
 import ProductsGrid from '../components/ProductsGrid'
+import { PriceRangeFilter } from '../components/PriceRangeFilter'
+import { AdvancedSortDropdown } from '../components/AdvancedSortDropdown'
+import { PaginationControls } from '../components/PaginationControls'
 import { useFilteredProducts } from '../hooks/useFilteredProducts'
 import { searchTags } from '../mockDB/db'
 import { ProductType } from '../context/GlobalState'
@@ -62,6 +65,11 @@ const Home = () => {
           </Tag>
         ))}
       </HStack>
+      <Flex justify="space-between" align="center" wrap="wrap" px={3} mb={3}>
+        <PriceRangeFilter />
+        <AdvancedSortDropdown />
+      </Flex>
+
       <ProductsGrid>
         {isLoading
           ? Array(20)
@@ -71,6 +79,8 @@ const Home = () => {
               <ProductCard key={`${product.id}-${index}`} product={product} />
             ))}
       </ProductsGrid>
+
+      <PaginationControls />
     </Main>
   )
 }

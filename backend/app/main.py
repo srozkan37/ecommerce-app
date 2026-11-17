@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from sqlmodel import Session, select
+from sqlmodel import Session, select, or_
 from sqlalchemy.orm import selectinload
 from typing import List, Optional, cast, Any
 from sqlalchemy.sql.elements import ColumnElement
@@ -188,17 +188,45 @@ def create_product(product: ProductCreate, session: Session = Depends(get_sessio
     return product_dict
 
 
-# Enhanced API endpoint for filtering and sorting
+# Enhanced API endpoint for filtering, searching, and sorting
 @app.get("/api/products", response_model=List[ProductRead])
 def get_products_api(
+    q: Optional[str] = Query(None, description="Search query for product title or description"),
+    min_price: Optional[float] = Query(None, ge=0, description="Minimum product price"),
+    max_price: Optional[float] = Query(None, ge=0, description="Maximum product price"),
     categoryId: Optional[int] = Query(None),
     deliveryOptionId: Optional[int] = Query(None),
     sort: str = Query("created_desc"),
+    skip: int = Query(0, ge=0, description="Pagination skip offset"),
+    limit: int = Query(50, ge=1, le=100, description="Pagination limit"),
     include_delivery_summary: bool = Query(True),
     session: Session = Depends(get_session),
 ):
-    """Get products with filtering and sorting for the frontend dropdown functionality"""
+    """Get products with search, filtering, sorting, and pagination for the frontend store interface"""
+    # Validation guard: min_price <= max_price
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(
+            status_code=400,
+            detail="min_price cannot be greater than max_price"
+        )
+
     stmt = select(Product).join(Category)
+
+    # Apply full-text search query (q) on title or description
+    if q and q.strip():
+        search_pattern = f"%{q.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Product.title.ilike(search_pattern),
+                Product.description.ilike(search_pattern)
+            )
+        )
+
+    # Apply price range filters
+    if min_price is not None:
+        stmt = stmt.where(Product.price >= min_price)
+    if max_price is not None:
+        stmt = stmt.where(Product.price <= max_price)
 
     # Apply category filter
     if categoryId:
@@ -258,8 +286,15 @@ def get_products_api(
         stmt = stmt.order_by(cast(ColumnElement[float], Product.price).asc())
     elif sort == "price_desc":
         stmt = stmt.order_by(cast(ColumnElement[float], Product.price).desc())
+    elif sort == "title_asc":
+        stmt = stmt.order_by(cast(ColumnElement[str], Product.title).asc())
+    elif sort == "title_desc":
+        stmt = stmt.order_by(cast(ColumnElement[str], Product.title).desc())
     else:  # created_desc (default)
         stmt = stmt.order_by(cast(ColumnElement, Product.created_at).desc())
+
+    # Apply pagination offset and limit
+    stmt = stmt.offset(skip).limit(limit)
 
     products = session.exec(stmt).all()
 
