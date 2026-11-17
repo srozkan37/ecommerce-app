@@ -34,23 +34,23 @@ install-all:
 # ─── native dev workflow ────────────────────────────────────────
 # Run backend + frontend concurrently (hot-reload)
 dev:
-    @echo "Starting native dev servers on 3001/8001 ..."
+    @echo "Starting native dev servers on 3002/8002 ..."
     cd frontend && npx concurrently \
       --names "backend,frontend" \
       --prefix-colors "blue,green" \
-      "cd ../backend && uv run --active uvicorn app.main:app --reload --reload-exclude '.venv/*' --host 0.0.0.0 --port 8001" \
-      "npm run dev -- --host 0.0.0.0 --port 3001"
+      "cd ../backend && uv run --active uvicorn app.main:app --reload --reload-exclude '.venv/*' --host 0.0.0.0 --port 8002" \
+      "npm run dev -- --host 0.0.0.0 --port 3002"
 
 # Run backend + frontend in background (detached for agentic tools)
 dev-headless: _ensure-logs-dir
-    @echo "Starting headless dev servers on 3001/8001 ..."
+    @echo "Starting headless dev servers on 3002/8002 ..."
     # truncate old logs so each run starts fresh
     > {{LOG_DIR}}/backend.log
     > {{LOG_DIR}}/frontend.log
     # backend
-    cd backend && uv run --active uvicorn app.main:app --reload --reload-exclude '.venv/*' --host 0.0.0.0 --port 8001 >> ../{{LOG_DIR}}/backend.log 2>&1 & echo $$! > {{LOG_DIR}}/backend.pid
+    cd backend && uv run --active uvicorn app.main:app --reload --reload-exclude '.venv/*' --host 0.0.0.0 --port 8002 >> ../{{LOG_DIR}}/backend.log 2>&1 & echo $$! > {{LOG_DIR}}/backend.pid
     # frontend
-    cd frontend && npm run dev -- --host 0.0.0.0 --port 3001 >> ../{{LOG_DIR}}/frontend.log 2>&1 & echo $$! > {{LOG_DIR}}/frontend.pid
+    cd frontend && npm run dev -- --host 0.0.0.0 --port 3002 >> ../{{LOG_DIR}}/frontend.log 2>&1 & echo $$! > {{LOG_DIR}}/frontend.pid
     @echo "Services started in background. Use 'just logs' to inspect and 'just stop' to stop."
 
 # Stop headless dev servers
@@ -59,18 +59,18 @@ stop:
     -@test -f {{LOG_DIR}}/backend.pid && kill -TERM `cat {{LOG_DIR}}/backend.pid` 2>/dev/null || true
     -@test -f {{LOG_DIR}}/frontend.pid && kill -TERM `cat {{LOG_DIR}}/frontend.pid` 2>/dev/null || true
     @sleep 2
-    -@lsof -ti:8001,3001 -sTCP:LISTEN 2>/dev/null | grep . | xargs kill -TERM 2>/dev/null || true
+    -@lsof -ti:8002,3002 -sTCP:LISTEN 2>/dev/null | grep . | xargs kill -TERM 2>/dev/null || true
     @sleep 2
-    -@lsof -ti:8001,3001 -sTCP:LISTEN 2>/dev/null | grep . | xargs kill -KILL 2>/dev/null || true
+    -@lsof -ti:8002,3002 -sTCP:LISTEN 2>/dev/null | grep . | xargs kill -KILL 2>/dev/null || true
     @rm -f {{LOG_DIR}}/backend.pid {{LOG_DIR}}/frontend.pid
     @echo "Services stopped."
 
 # Independent servers (sometimes handy)
 dev-backend:
-    cd backend && uv run --active uvicorn app.main:app --reload --reload-exclude '.venv/*' --host 0.0.0.0 --port 8001
+    cd backend && uv run --active uvicorn app.main:app --reload --reload-exclude '.venv/*' --host 0.0.0.0 --port 8002
 
 dev-frontend:
-    cd frontend && npm run dev -- --host 0.0.0.0 --port 3001
+    cd frontend && npm run dev -- --host 0.0.0.0 --port 3002
 
 # Show the last 100 lines of each log
 logs:
@@ -161,8 +161,8 @@ reset-db:
 # Health check for running services
 health:
     @echo "Checking service health..."
-    @curl -f http://localhost:8001/health || echo "Backend not responding"
-    @curl -f http://localhost:3001 || echo "Frontend not responding"
+    @curl -f http://localhost:8002/health || echo "Backend not responding"
+    @curl -f http://localhost:3002 || echo "Frontend not responding"
 
 # Run database shell (SQLite CLI)
 db-shell:

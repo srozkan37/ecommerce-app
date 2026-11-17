@@ -50,7 +50,7 @@ const Product = () => {
   const fetchProductWithDelivery = async (productId: string) => {
     try {
       setIsLoadingProduct(true)
-      const API_BASE_URL = 'http://localhost:8001'
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8002'
       const response = await fetch(`${API_BASE_URL}/products/${productId}`)
 
       if (!response.ok) {

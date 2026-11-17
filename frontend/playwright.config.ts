@@ -16,7 +16,7 @@ export default defineConfig({
     ['junit', { outputFile: 'test-results.xml' }],
   ],
   use: {
-    baseURL: 'http://localhost:3001',
+    baseURL: 'http://localhost:3002',
     headless: process.env.HEADED !== '1',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
@@ -38,17 +38,17 @@ export default defineConfig({
   webServer: [
     {
       command:
-        'cd ../backend && uv run --active python -m app.seed && uv run --active uvicorn app.main:app --host 0.0.0.0 --port 8001',
-      url: 'http://localhost:8001/health',
+        'cd ../backend && uv run --active python -m app.seed && uv run --active uvicorn app.main:app --host 0.0.0.0 --port 8002',
+      url: 'http://localhost:8002/health',
       reuseExistingServer: !!process.env.REUSE_EXISTING_SERVER || !process.env.CI, // Reuse locally to avoid port conflicts, fresh in CI
       timeout: 180000, // Increased timeout for CI
     },
     {
       // Use preview in CI for stability, dev locally for faster iteration
       command: process.env.CI
-        ? 'npm run build && npm run preview -- --host 0.0.0.0 --port 3001 --strictPort'
+        ? 'npm run build && npm run preview -- --host 0.0.0.0 --port 3002 --strictPort'
         : 'npm run dev',
-      url: 'http://localhost:3001',
+      url: 'http://localhost:3002',
       reuseExistingServer: !!process.env.REUSE_EXISTING_SERVER || !process.env.CI,
       timeout: 240000, // Increased timeout for CI build step
     },

@@ -1,6 +1,6 @@
 import { Category, DeliveryOption, Product } from './types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8002'
 
 class ApiClient {
   private async request<T>(endpoint: string, options: globalThis.RequestInit = {}): Promise<T> {

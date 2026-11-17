@@ -50,7 +50,7 @@ test.describe('Product Browsing', () => {
 
     // Check that it's either a backend URL or an external URL (when using fallback data)
     expect(imageSrc).toMatch(
-      /(?:localhost:8001.*\/products\/\d+\/image|https?:\/\/.*\.(jpg|jpeg|png|gif|webp))/
+      /(?:localhost:8002.*\/products\/\d+\/image|https?:\/\/.*\.(jpg|jpeg|png|gif|webp))/
     )
   })
 

@@ -54,17 +54,21 @@
   // ─────────────────────────────────────────────────────────────────
   // Port Forwarding
   // ─────────────────────────────────────────────────────────────────
+  "appPort": [
+    "3002:3002",
+    "8002:8002"
+  ],
   // Automatically forward application ports to localhost
-  "forwardPorts": [3001, 8001],
+  "forwardPorts": [3002, 8002],
   
   "portsAttributes": {
-    "3001": {
+    "3002": {
       "label": "Frontend (Vite)",
       "onAutoForward": "notify",
       "requireLocalPort": true,
       "protocol": "http"
     },
-    "8001": {
+    "8002": {
       "label": "Backend (FastAPI)",
       "onAutoForward": "notify",
       "requireLocalPort": true,

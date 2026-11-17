@@ -68,7 +68,7 @@ app = FastAPI(
 
 # CORS middleware for frontend integration
 origins = os.getenv(
-    "CORS_ALLOW_ORIGINS", "http://localhost:3001,http://127.0.0.1:3001"
+    "CORS_ALLOW_ORIGINS", "http://localhost:3002,http://127.0.0.1:3002"
 ).split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -475,4 +475,4 @@ def get_product_image(product_id: int, session: Session = Depends(get_session)):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8002)
